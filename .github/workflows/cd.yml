@@ -1,0 +1,113 @@
+# CD Pipeline
+# On successful CI run against main: deploy the new image and run smoke tests.
+# Fails the pipeline if smoke tests fail (M4 requirement).
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches: [main]
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  DOCKER_IMAGE_NAME: cats-vs-dogs-classifier
+  DEPLOY_NAMESPACE: default
+
+jobs:
+  deploy-and-verify:
+    name: Deploy & Smoke Test
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # models/model.pt is gitignored, but the docker-compose fallback below
+      # builds from the Dockerfile which COPYs models/. Generate it up front.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install torch for model artifact
+        run: pip install torch==2.9.1
+
+      - name: Create model artifact
+        run: |
+          mkdir -p models
+          python -c "
+          import torch, sys
+          sys.path.insert(0, '.')
+          from src.models.cnn_model import CNNBaseline
+          m = CNNBaseline(num_classes=2)
+          torch.save(m.state_dict(), 'models/model.pt')
+          print('Model artifact saved.')
+          "
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: "latest"
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config 2>/dev/null || true
+        continue-on-error: true
+
+      - name: Compute image reference
+        id: image
+        run: |
+          SHORT_SHA="${{ github.event.workflow_run.head_sha }}"
+          IMAGE_TAG="${SHORT_SHA:0:7}"
+          echo "tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "image=${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/${{ env.DOCKER_IMAGE_NAME }}:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Update deployment manifest with new image
+        run: |
+          sed -i "s|image: .*|image: ${{ steps.image.outputs.image }}|g" deploy/kubernetes/deployment.yaml
+          grep -n "image:" deploy/kubernetes/deployment.yaml
+
+      - name: Deploy to Kubernetes (if cluster available)
+        run: |
+          if command -v kubectl >/dev/null 2>&1 && kubectl cluster-info >/dev/null 2>&1; then
+            echo "Deploying to Kubernetes cluster..."
+            kubectl apply -f deploy/kubernetes/deployment.yaml -n ${{ env.DEPLOY_NAMESPACE }}
+            kubectl apply -f deploy/kubernetes/service.yaml -n ${{ env.DEPLOY_NAMESPACE }}
+            kubectl rollout status deployment/cats-vs-dogs-classifier -n ${{ env.DEPLOY_NAMESPACE }} --timeout=300s
+          else
+            echo "No Kubernetes cluster available. Deploying via Docker Compose..."
+            docker compose -f deploy/docker-compose.yml pull || true
+            docker compose -f deploy/docker-compose.yml up -d --force-recreate
+          fi
+
+      - name: Wait for service to be ready
+        run: |
+          echo "Waiting for service to stabilize..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
+              echo "Service is ready after ${i} checks."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Service did not become ready in time."
+          exit 1
+
+      - name: Run post-deploy smoke tests
+        run: |
+          pip install --quiet requests Pillow
+          python deploy/smoke_test.py http://localhost:8000
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "::notice::Deployment successful! Service is running and smoke tests passed."
+          else
+            echo "::error::Deployment failed or smoke tests did not pass."
+            exit 1
+          fi

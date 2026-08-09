@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cats-vs-dogs-classifier
+  labels:
+    app: cats-vs-dogs-classifier
+    component: inference
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cats-vs-dogs-classifier
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: cats-vs-dogs-classifier
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+      containers:
+        # The model is baked into the image (COPY models/ models/ in the
+        # Dockerfile), so no volume mount is needed. imagePullPolicy:
+        # IfNotPresent lets kind/minikube/Docker Desktop use a locally-loaded
+        # image without trying to pull it from a registry.
+        - name: classifier
+          image: cats-vs-dogs-classifier:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          env:
+            - name: MODEL_PATH
+              value: "models/model.pt"
+            - name: DEVICE
+              value: "cpu"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10

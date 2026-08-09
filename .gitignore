@@ -1,0 +1,29 @@
+# DVC-tracked data & model artifacts
+data/raw/
+data/processed/
+models/*.pt
+metrics/
+mlruns/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+logs/
+api/api.log
+train_run.log
+api_run.log
+
+# DVC internals
+/.dvc/cache
+/.dvc/tmp
+
+# OS
+.DS_Store
+
+# Virtual environments
+venv/

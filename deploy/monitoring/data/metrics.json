@@ -1,0 +1,14 @@
+{
+  "service": "cats-vs-dogs-classifier",
+  "uptime_seconds": 30.77,
+  "uptime_human": "0h 0m 30s",
+  "total_requests": 2,
+  "error_count": 0,
+  "error_rate": 0.0,
+  "endpoints": {
+    "/health": {
+      "request_count": 2
+    }
+  },
+  "requests_per_minute": 2.0
+}

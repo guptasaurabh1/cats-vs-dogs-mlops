@@ -1,0 +1,23 @@
+# DVC pipeline parameters
+
+preprocess:
+  img_size: 224
+  train_ratio: 0.8
+  val_ratio: 0.1
+  test_ratio: 0.1
+
+train:
+  model: "CNNBaseline"
+  num_classes: 2
+  batch_size: 32
+  epochs: 3
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  optimizer: "adam"
+  scheduler: "cosine"
+  early_stopping_patience: 5
+  dropout: 0.5
+  seed: 42
+
+evaluate:
+  batch_size: 64

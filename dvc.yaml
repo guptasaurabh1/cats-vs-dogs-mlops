@@ -1,0 +1,50 @@
+# DVC pipeline for Cats vs Dogs MLOps assignment
+# Defines stages: preprocess -> train -> evaluate
+
+stages:
+  preprocess:
+    cmd: python src/data/preprocess.py
+    deps:
+      - src/data/preprocess.py
+      - src/utils.py
+      - data/processed/organized
+    params:
+      - preprocess
+    outs:
+      - data/processed/train_tensors.pt
+      - data/processed/val_tensors.pt
+      - data/processed/test_tensors.pt
+      - data/processed/split_info.json
+
+  train:
+    cmd: python src/train.py
+    deps:
+      - src/train.py
+      - src/models/cnn_model.py
+      - src/utils.py
+      - data/processed/train_tensors.pt
+      - data/processed/val_tensors.pt
+    params:
+      - train
+    outs:
+      - models/model.pt
+    metrics:
+      - metrics/train_metrics.json:
+          cache: false
+
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+      - src/evaluate.py
+      - src/models/cnn_model.py
+      - src/utils.py
+      - models/model.pt
+      - data/processed/test_tensors.pt
+    params:
+      - evaluate
+    metrics:
+      - metrics/test_metrics.json:
+          cache: false
+    plots:
+      - metrics/confusion_matrix.png:
+          cache: false

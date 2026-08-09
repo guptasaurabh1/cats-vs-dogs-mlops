@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cats-vs-dogs-service
+  labels:
+    app: cats-vs-dogs-classifier
+spec:
+  selector:
+    app: cats-vs-dogs-classifier
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  type: LoadBalancer

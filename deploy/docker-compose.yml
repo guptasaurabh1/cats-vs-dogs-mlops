@@ -1,0 +1,28 @@
+services:
+  inference-service:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: cats-vs-dogs-classifier:latest
+    container_name: cats-vs-dogs-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=models/model.pt
+      - DEVICE=cpu
+    volumes:
+      - ../models:/app/models:ro
+      - ./api/logs:/app/api/logs
+      - ./monitoring/data:/app/monitoring/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

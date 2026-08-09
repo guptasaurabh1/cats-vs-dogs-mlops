@@ -1,0 +1,39 @@
+# FastAPI
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.18
+# pydantic 2.10.3 pins pydantic-core==2.27.1, which has no Python 3.14 macOS
+# arm64 wheel. 2.12.x is the first release whose core ships cp314 wheels.
+pydantic==2.12.5
+
+# ML & Data
+# torch/torchvision 2.7.1/0.22.1 have no cp314 wheels; 2.9.1/0.24.1 are the
+# first releases with Python 3.14 support (matches the mlflow>=2.22 bump).
+torch==2.9.1
+torchvision==0.24.1
+numpy>=1.22.0
+Pillow>=10.0.0
+scikit-learn>=1.3.0
+scipy>=1.9.0
+seaborn>=0.12.0
+matplotlib>=3.7.0
+tqdm>=4.65.0
+
+# Experiment Tracking
+# mlflow 2.x pins pyarrow<20, which has no Python 3.14 macOS arm64 wheels.
+# mlflow 3.x allows pyarrow>=22 (first cp314-compatible release).
+mlflow==3.15.0
+
+# Data versioning
+dvc>=3.0.0
+dvc[gs]>=3.0.0
+datasets>=2.14.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+httpx>=0.27.0
+
+# Utilities
+PyYAML>=6.0
+requests>=2.31.0
