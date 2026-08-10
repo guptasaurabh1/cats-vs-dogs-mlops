@@ -27,3 +27,4 @@ api_run.log
 
 # Virtual environments
 venv/
+.shebang_backup.tar.gz
