@@ -69,7 +69,7 @@ stages:
           model: CNNBaseline
           num_classes: 2
           batch_size: 32
-          epochs: 3
+          epochs: 20
           learning_rate: 0.001
           weight_decay: 0.0001
           optimizer: adam
@@ -80,11 +80,11 @@ stages:
     outs:
     - path: metrics/train_metrics.json
       hash: md5
-      md5: 8b6ff3cbc8e836fae76f5c65ab1c6234
-      size: 150
+      md5: fcf19c8512341afb850e75c4b0cba07f
+      size: 151
     - path: models/model.pt
       hash: md5
-      md5: e3217a228089e15f021d3f1fffe6ed7d
+      md5: 8269bc29a8aab2463c68d93b106a2bbb
       size: 19427621
   evaluate:
     cmd: python src/evaluate.py
@@ -95,7 +95,7 @@ stages:
       size: 376492429
     - path: models/model.pt
       hash: md5
-      md5: e3217a228089e15f021d3f1fffe6ed7d
+      md5: 8269bc29a8aab2463c68d93b106a2bbb
       size: 19427621
     - path: src/evaluate.py
       hash: md5
@@ -116,9 +116,9 @@ stages:
     outs:
     - path: metrics/confusion_matrix.png
       hash: md5
-      md5: 13a11c30bbd48c89547c671cbef4f60c
-      size: 28455
+      md5: b0406762bd38b9c9173b4a969e0d052c
+      size: 26111
     - path: metrics/test_metrics.json
       hash: md5
-      md5: 979e02b1d5e270d3173f7a769d0e7ea2
+      md5: 404b1680785c87a62d5cf110add3dca5
       size: 166
