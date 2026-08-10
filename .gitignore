@@ -18,6 +18,9 @@ api/api.log
 train_run.log
 api_run.log
 
+# Runtime telemetry
+monitoring/data/
+
 # DVC internals
 /.dvc/cache
 /.dvc/tmp
